@@ -29,22 +29,24 @@ def get_api(cfg):
 
 api = get_api(cfg)
 #periodically get new videos
-@periodic_task(run_every=(crontab( minute="*/15")))
+@periodic_task(run_every=(crontab( minute="*/12")))
 def get_latest_videos():
     time_delta = datetime.datetime.now() - datetime.timedelta(minutes=15)
     videos = YoutubeVideo.objects.filter(publication_date__gte = time_delta).order_by("-publication_date")
+    current_list = redis.lrange('videos',0, -1)
     for video in videos:
-        video_pickled = pickle.dumps(video)
-        redis.lpush('clips', video_pickled)
+        pickled_video = pickle.dumps(video)
+        if pickled_video not in current_list:
+            redis.lpush('videos', pickled_video)
 
-@periodic_task(run_every=(crontab( minute="*/32")))
+@periodic_task(run_every=(crontab( minute="*/17")))
 def post_video_to_facebook():
     """Post new articles to facebook"""
     for i in range(3):
         if redis.llen('clips') > 0:
             #get the first element
-            video_unpickled = redis.rpop('clips')
-            video = pickle.loads(video_unpickled)
+            pickled_video = redis.rpop('clips')
+            video = pickle.loads(pickled_video)
 
             attachment = {"name":video.title ,  "link" :video.url , "description": video.description}
             try:
