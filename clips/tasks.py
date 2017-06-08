@@ -43,9 +43,9 @@ def get_latest_videos():
 def post_video_to_facebook():
     """Post new articles to facebook"""
     for i in range(3):
-        if redis.llen('clips') > 0:
+        if redis.llen('videos') > 0:
             #get the first element
-            pickled_video = redis.rpop('clips')
+            pickled_video = redis.rpop('videos')
             video = pickle.loads(pickled_video)
 
             attachment = {"name":video.title ,  "link" :video.url , "description": video.description}
