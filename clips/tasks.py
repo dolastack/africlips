@@ -31,18 +31,17 @@ api = get_api(cfg)
 #periodically get new videos
 @periodic_task(run_every=(crontab( minute="*/12")))
 def get_latest_videos():
-    time_delta = datetime.datetime.now() - datetime.timedelta(minutes=15)
-    videos = YoutubeVideo.objects.filter(publication_date__gte = time_delta).order_by("-publication_date")
+    videos = YoutubeVideo.objects.videos_after(minutes=10)
     current_list = redis.lrange('videos',0, -1)
     for video in videos:
         pickled_video = pickle.dumps(video)
         if pickled_video not in current_list:
             redis.lpush('videos', pickled_video)
 
-@periodic_task(run_every=(crontab( minute="*/17")))
+@periodic_task(run_every=(crontab( minute="*/25")))
 def post_video_to_facebook():
     """Post new articles to facebook"""
-    for i in range(3):
+    for i in range(1):
         if redis.llen('videos') > 0:
             #get the first element
             pickled_video = redis.rpop('videos')
@@ -73,11 +72,11 @@ def save_video(feedData, video_feed):
         video.publication_date = loc_dt.strftime('%Y-%m-%d %H:%M:%S')
 
         video.video_feed = video_feed
-        #video.get_embed_code()
+       
         video.setID()
         video.save()
 
-#@background(schedule=50)
+#@background(schedule=9)
 @periodic_task(run_every=(crontab(minute="*/9")))
 def youtube_feed_update():
     """background task to get update from feed """
