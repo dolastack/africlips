@@ -7,12 +7,16 @@ from celery.task.schedules import crontab
 from celery.decorators import periodic_task
 
 import pickle, redis
+
+
+DISPLAYED_VIDEOS = []
+
 # facebook api
 # create instance of redis
 redis = redis.StrictRedis(host='localhost', port=6379, db=12)
 cfg = {
 "page_id"      : "1325534340876455",  # Step 1
-"access_token" : "EAAL3F6fnlNkBAMXksivgtM6XFSZBcbmHRJUG3MogBPz2hsuZAPXaG0ky8C1TbxZAJZAOCgT5V2hFocJlWaBW6VRXiYmEt4twneETXeZCuPvbJxNrhNyZAHKHjNR3upSBU3fmHZAQ3TZA3Ky06HjZAoAy1zHpzYewlM20ZD"   # Step 3
+"access_token" : "EAAFQh4gZCvBYBAHoBOgK3vMAu1ZAy5bAj6lkXJb738MNZBzxZCK4sXw005nE8HytWgHRZA38EnlOiqE3wRx0RNj0gYXFKrPsSQiVbAidB9BGXn7asSa4CyS5VNt7RydJ4SZCGyR3gjw0RpmmSzsKsGGHfNUgKpOpAZD"   # Step 3
 }
 
 def get_api(cfg):
@@ -31,21 +35,20 @@ api = get_api(cfg)
 #periodically get new videos
 @periodic_task(run_every=(crontab( minute="*/12")))
 def get_latest_videos():
-    videos = YoutubeVideo.objects.videos_after(minutes=10)
-    current_list = redis.lrange('videos',0, -1)
+    videos = YoutubeVideo.objects.videos_after(minutes=12)
+
     for video in videos:
-        pickled_video = pickle.dumps(video)
-        if pickled_video not in current_list:
-            redis.lpush('videos', pickled_video)
+        if video.video_id not in DISPLAYED_VIDEOS:
+            redis.lpush('videos', video.video_id )
+            DISPLAYED_VIDEOS.append(video.video_id)
 
 @periodic_task(run_every=(crontab( minute="*/25")))
 def post_video_to_facebook():
     """Post new articles to facebook"""
-    for i in range(1):
+    for i in range(2):
         if redis.llen('videos') > 0:
-            #get the first element
-            pickled_video = redis.rpop('videos')
-            video = pickle.loads(pickled_video)
+
+            video = YoutubeVideo.objects.get(video_id = redis.rpop('videos'))
 
             attachment = {"name":video.title ,  "link" :video.url , "description": video.description}
             try:
@@ -72,7 +75,7 @@ def save_video(feedData, video_feed):
         video.publication_date = loc_dt.strftime('%Y-%m-%d %H:%M:%S')
 
         video.video_feed = video_feed
-       
+
         video.setID()
         video.save()
 
