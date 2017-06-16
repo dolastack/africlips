@@ -1,3 +1,2 @@
-celerybeat.pid
 *migrations/*
-*/__pycache__/*
+*__pycache__*
