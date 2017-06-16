@@ -42,7 +42,7 @@ def get_latest_videos():
             redis.lpush('videos', video.video_id )
             DISPLAYED_VIDEOS.append(video.video_id)
 
-@periodic_task(run_every=(crontab( minute="*/25")))
+@periodic_task(run_every=(crontab( minute="*/13")))
 def post_video_to_facebook():
     """Post new articles to facebook"""
     for i in range(2):
