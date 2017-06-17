@@ -8,9 +8,6 @@ from celery.decorators import periodic_task
 
 import pickle, redis
 
-
-DISPLAYED_VIDEOS = []
-
 # facebook api
 # create instance of redis
 redis = redis.StrictRedis(host='localhost', port=6379, db=12)
@@ -48,7 +45,7 @@ def post_video_to_facebook():
     for i in range(2):
         if redis.llen('videos') > 0:
 
-            video = YoutubeVideo.objects.get(video_id = redis.rpop('videos'))
+            video = YoutubeVideo.objects.get(video_id = redis.lpop('videos'))
 
             attachment = {"name":video.title ,  "link" :video.url , "description": video.description}
             try:
