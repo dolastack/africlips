@@ -1,7 +1,13 @@
 from django.db import models
 import hashlib
 import re, datetime
+
+from django.contrib.auth.models import User
 # Create your models here.
+
+
+
+
 
 class VideoFeed(models.Model):
     title = models.CharField(max_length=200)
@@ -52,6 +58,8 @@ class YoutubeVideo(Video):
         regex = re.compile(regex_str)
         matches = regex.findall(self.url)
         return matches[0][0] + "embed/" + matches[0][1]
+
+
 
 class EmbedVideo(models.Model):
     title =  models.CharField(max_length=200)

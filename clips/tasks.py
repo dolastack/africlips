@@ -1,7 +1,7 @@
 from .models import YoutubeVideo, YoutubeFeed
 import datetime
 import feedparser, facebook
-
+from django.db.models.signals import post_save
 from pytz import timezone
 from celery.task.schedules import crontab
 from celery.decorators import periodic_task
@@ -33,14 +33,14 @@ def get_api(cfg):
 
 api = get_api(cfg)
 #periodically get new videos
-@periodic_task(run_every=(crontab( minute="*/12")))
-def get_latest_videos():
-    videos = YoutubeVideo.objects.videos_after(minutes=12)
+def get_latest_video(sender,  **kwargs):
+    #videos = YoutubeVideo.objects.videos_after(minutes=12)
+    if kwargs['created']:
+        video = kwargs['instance']
+        redis.lpush('videos', video.video_id )
 
-    for video in videos:
-        if video.video_id not in DISPLAYED_VIDEOS:
-            redis.lpush('videos', video.video_id )
-            DISPLAYED_VIDEOS.append(video.video_id)
+#post save signal connect
+post_save.connect(get_latest_video, sender=YoutubeVideo)
 
 @periodic_task(run_every=(crontab( minute="*/13")))
 def post_video_to_facebook():
