@@ -1,3 +1,4 @@
 celerybeat.pid
 *migrations/*
 *__pycache__*
+*settings.py
